@@ -1,0 +1,34 @@
+name: Build
+
+on:  
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-java@v1
+      with:
+        java-version: '12.x'
+    - uses: subosito/flutter-action@v1
+      with:
+        flutter-version: '1.22.4'
+    - run: flutter pub get
+    - run: |
+        flutter build apk
+        mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/J-Reader.apk
+    - run: |
+        flutter build ios --release --no-codesign
+        mkdir -p build/ios/iphoneos/IPA/Payload
+        mv build/ios/iphoneos/Runner.app build/ios/iphoneos/IPA/Payload/Runner.app
+    - uses: papeloto/action-zip@v1
+      with:
+        files: build/ios/iphoneos/IPA
+        dest: build/ios/iphoneos/J-Reader.ipa
+    - uses: ncipollo/release-action@v1
+      with:
+        artifacts: "build/app/outputs/flutter-apk/J-Reader.apk,build/ios/iphoneos/J-Reader.ipa"
+        token: ${{ secrets.GITHUB_TOKEN }}
